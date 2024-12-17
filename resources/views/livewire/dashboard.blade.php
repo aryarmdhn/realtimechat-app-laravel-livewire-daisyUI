@@ -13,7 +13,7 @@
                     <div class="relative">
                         <input type="text"
                             wire:model.live="search"
-                            placeholder="Search users..."
+                            placeholder="Search messages..."
                             class="input input-bordered w-full pl-10" />
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-3 text-gray-400"
                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -23,54 +23,53 @@
                     </div>
                 </div>
 
-                <!-- User List -->
+                <!-- Chat List -->
                 <div class="divide-y divide-gray-200" wire:poll.1s>
                     @foreach ($users as $user)
                         <div class="hover:bg-base-200 transition-colors duration-150">
                             <a href="{{ route('chat', $user) }}"
                                 class="p-4 flex items-center space-x-4">
-                                <div class="avatar">
+                                <!-- Avatar with online indicator -->
+                                <div class="avatar {{ $user->has_unread ? 'online' : '' }}">
                                     <div class="w-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                                         <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random" />
                                     </div>
                                 </div>
 
                                 <div class="flex-1 min-w-0">
+                                    <!-- User name and time -->
                                     <div class="flex items-center justify-between">
-                                        <h3 class="font-semibold text-lg truncate">{{ $user->name }}</h3>
-                                        <span class="text-sm text-gray-500">
-                                            {{ $user->email }}
-                                        </span>
+                                        <div class="flex items-center">
+                                            <h3 class="font-semibold text-lg truncate">{{ $user->name }}</h3>
+                                            @if($user->has_unread)
+                                                <div class="w-2 h-2 bg-primary rounded-full ml-2"></div>
+                                            @endif
+                                        </div>
+                                        @if($user->lastMessage)
+                                            <span class="text-xs text-gray-500">
+                                                {{ $user->lastMessage->created_at->diffForHumans() }}
+                                            </span>
+                                        @endif
                                     </div>
 
+                                    <!-- Last message -->
                                     <div class="flex items-center justify-between mt-1">
-                                        @if($lastMessage = $user->messages()->latest()->first())
-                                            <p class="text-sm text-gray-600 truncate max-w-[240px]">
+                                        @if($lastMessage = $user->lastMessage)
+                                            <p class="text-sm {{ $user->has_unread ? 'font-medium text-gray-900' : 'text-gray-600' }} truncate max-w-[240px]">
+                                                @if($lastMessage->from_user_id === auth()->id())
+                                                    <span class="text-gray-400">You: </span>
+                                                @endif
                                                 {{ $lastMessage->message }}
-                                                <span class="text-xs text-gray-400 ml-2">
-                                                    {{ $lastMessage->created_at->diffForHumans() }}
-                                                </span>
                                             </p>
-                                            @if($user->unreadMessages()->count() > 0)
-                                                <div class="badge badge-primary">
-                                                    {{ $user->unreadMessages()->count() }}
-                                                </div>
+                                            @if($user->has_unread)
+                                                <div class="badge badge-primary ml-2">{{ $user->unread_count }} new</div>
                                             @endif
                                         @else
                                             <p class="text-sm text-gray-600">
-                                                Click to start conversation
+                                                Start a conversation
                                             </p>
-                                            <div class="badge badge-secondary">New</div>
                                         @endif
                                     </div>
-                                </div>
-
-                                <div class="flex-none ml-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400"
-                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7" />
-                                    </svg>
                                 </div>
                             </a>
                         </div>
@@ -82,14 +81,14 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-500" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
                             </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-1">
-                                {{ $search ? 'No users found for "' . $search . '"' : 'No users found' }}
+                                {{ $search ? 'No results found for "' . $search . '"' : 'No messages yet' }}
                             </h3>
                             <p class="text-gray-500">
-                                {{ $search ? 'Try searching with a different term.' : 'Looks like there are no other users registered yet.' }}
+                                {{ $search ? 'Try searching with different keywords' : 'Start a conversation with someone' }}
                             </p>
                         </div>
                     @endif

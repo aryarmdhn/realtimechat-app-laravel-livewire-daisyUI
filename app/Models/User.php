@@ -42,4 +42,39 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class, 'from_user_id')
+            ->orWhere('to_user_id', $this->id);
+    }
+
+    public function unreadMessages()
+    {
+        return $this->hasMany(Message::class, 'from_user_id')
+            ->where('to_user_id', auth()->id())
+            ->whereNull('read_at');
+    }
+
+    public function getLastMessageAttribute()
+    {
+        return Message::where(function($query) {
+                $query->where('from_user_id', $this->id)
+                      ->where('to_user_id', auth()->id());
+            })
+            ->orWhere(function($query) {
+                $query->where('from_user_id', auth()->id())
+                      ->where('to_user_id', $this->id);
+            })
+            ->latest()
+            ->first();
+    }
+
+    public function hasUnreadMessages()
+    {
+        return Message::where('from_user_id', $this->id)
+            ->where('to_user_id', auth()->id())
+            ->whereNull('read_at')
+            ->exists();
+    }
 }
